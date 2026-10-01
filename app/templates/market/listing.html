@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ listing.title }} — GamingMarket{% endblock %}{% block content %}
+<div class="detail">
+<section class="gallery">{% for p in listing.photos %}<img src="{{ url_for('seller.media', listing_id=listing.id, filename=p.filename) }}" alt="{{ listing.title }}">{% endfor %}</section>
+<section class="panel">
+<div class="row"><span class="chip">{{ listing.game.name }}</span><span class="status-dot {{ listing.seller.status }}">{{ listing.seller.status|title }}</span></div>
+<h1>{{ listing.title }}</h1><p class="price">₦{{ "{:,}".format(listing.price) }}</p><p>{{ listing.description }}</p>
+<div class="feature-grid">{% for k,v in listing.attributes.items() if v %}<div><small>{{ k.replace('_',' ')|title }}</small><strong>{{ v }}</strong></div>{% endfor %}</div>
+<div class="seller-box status-{{ listing.seller.status }}"><div><strong>{{ listing.seller.username }}</strong>{% for b in listing.seller.badge_labels %}<span class="badge">{{b}}</span>{% endfor %}</div><a href="{{ url_for('market.seller_profile', user_id=listing.seller.id) }}">View seller</a></div>
+{% if current_user.is_authenticated %}
+<form method="post" action="{{ url_for('market.deal_request', listing_id=listing.id) }}"><textarea name="message" placeholder="Introduce yourself or ask a question…"></textarea><button class="btn full">Send Deal Request</button></form>
+{% else %}<a class="btn full" href="{{ url_for('auth.login', next=url_for('market.listing_detail', listing_id=listing.id)) }}">Login to Send Deal Request</a>{% endif %}
+</section></div>
+{% endblock %}

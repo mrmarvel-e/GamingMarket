@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}GamingMarket — Gaming Accounts{% endblock %}{% block content %}
+<section class="store-top">
+  <div><p class="eyebrow">NIGERIA · GAMING ACCOUNT MARKETPLACE</p><h1>Buy. Sell. Game on.</h1><p class="muted">Browse gaming accounts from marketplace sellers, compare prices and send a deal request when you’re ready.</p></div>
+  {% if current_user.is_authenticated %}<a class="btn" href="{{ url_for('seller.new_listing') }}">+ Sell an Account</a>{% else %}<a class="btn" href="{{ url_for('auth.register') }}">Start Selling</a>{% endif %}
+</section>
+<div class="game-strip">{% for g in games %}<a class="{% if game==g.slug %}active{% endif %}" href="{{ url_for('market.home', game=g.slug) }}">{{ g.name }}</a>{% endfor %}</div>
+<section class="section-head"><div><h2>{% if game %}{{ game|replace('-',' ')|title }}{% else %}Featured Marketplace{% endif %}</h2><p class="muted">{{ listings|length }} active accounts available</p></div><a class="btn ghost small" href="{{ url_for('market.home') }}">View all</a></section>
+<div class="grid">
+{% for l in listings %}
+  <article class="listing-card status-{{ l.seller.status }}">
+    {% if l.photos %}<img src="{{ url_for('seller.media', listing_id=l.id, filename=l.photos[0].filename) }}" alt="{{ l.title }}">{% else %}<div class="image-placeholder">GM</div>{% endif %}
+    <div class="card-body">
+      <div class="row"><span class="chip">{{ l.game.name }}</span>{% if l.top_pinned and l.seller.status=="green" %}<span class="chip pin">★ Top Listing</span>{% endif %}</div>
+      <h3>{{ l.title }}</h3>
+      <div class="seller-line"><a href="{{ url_for('market.seller_profile', user_id=l.seller.id) }}">{{ l.seller.username }}</a><span class="badge-area">{% for b in l.seller.badge_labels %}<span class="badge">{{ b }}</span>{% endfor %}</span></div>
+      <p class="price">₦{{ "{:,}".format(l.price) }}</p>
+      <a class="btn full" href="{{ url_for('market.listing_detail', listing_id=l.id) }}">Send Deal Request</a>
+    </div>
+  </article>
+{% else %}<div class="empty">No accounts match your current selection.</div>{% endfor %}
+</div>
+{% endblock %}

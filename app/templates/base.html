@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}GamingMarket{% endblock %}</title>
+<meta name="theme-color" content="#050505">
+<meta name="description" content="GamingMarket — buy and sell gaming accounts in Nigeria.">
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="{{ url_for('market.home') }}"><span class="brand-mark">GM</span><span>GamingMarket</span></a>
+  <form class="header-search" action="{{ url_for('market.home') }}"><input name="q" value="{{ request.args.get('q','') }}" placeholder="Search gaming accounts…"><button>Search</button></form>
+  <nav>
+    <a href="{{ url_for('market.home') }}">Games</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('seller.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('seller.new_listing') }}">Sell</a>
+      <a href="{{ url_for('seller.profile') }}">Profile</a>
+      <a class="notif" href="{{ url_for('seller.dashboard') }}">Notifications{% if unread_notifications %}<b>{{ unread_notifications }}</b>{% endif %}</a>
+      {% if current_user.is_admin %}<a class="btn small" href="{{ url_for('admin.dashboard') }}">Admin Panel</a>{% endif %}
+      <form class="inline" method="post" action="{{ url_for('auth.logout') }}"><button class="link-btn">Logout</button></form>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}">Login</a><a class="btn small" href="{{ url_for('auth.register') }}">Create account</a>
+    {% endif %}
+  </nav>
+</header>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap">{% for category,msg in messages %}<div class="flash {{category}}">{{msg}}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<main>{% block content %}{% endblock %}</main>
+<footer><span>© GamingMarket</span><span>NGN only · Marketplace chats may be reviewed by Admin for safety.</span></footer>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% if current_user.is_authenticated and vapid_public_key %}<script>window.GM_VAPID_PUBLIC_KEY={{ vapid_public_key|tojson }};</script>{% endif %}
+</body></html>
