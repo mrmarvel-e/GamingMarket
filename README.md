@@ -37,3 +37,12 @@ Set a strong `ADMIN_PASSWORD` in `.env` before use.
 ### SQLite
 
 The default database is created at `instance/gamingmarket.db`.
+
+## Production / FadeHost
+
+- Runtime: Python + Flask
+- Database: SQLite by default
+- Local database: `instance/gamingmarket.db`
+- For hosted persistence, mount persistent storage and set `SQLITE_DB_PATH` to a file in that mounted directory.
+- Never commit `.env`, `instance/gamingmarket.db`, or uploaded files.
+- Start command: `python run.py`

@@ -12,15 +12,15 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
+    sqlite_path = os.getenv("SQLITE_DB_PATH") or str(Path(app.instance_path) / "gamingmarket.db")
+    database_url = os.getenv("DATABASE_URL") or "sqlite:///" + sqlite_path
+
     app.config.from_mapping(
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-change-me"),
-        SQLALCHEMY_DATABASE_URI=os.getenv(
-            "DATABASE_URL",
-            "sqlite:///" + str(Path(app.instance_path) / "gamingmarket.db")
-        ),
+        SQLALCHEMY_DATABASE_URI=database_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         MAX_CONTENT_LENGTH=int(os.getenv("MAX_CONTENT_LENGTH", "16777216")),
-        UPLOAD_FOLDER=str(Path(app.instance_path) / "uploads"),
+        UPLOAD_FOLDER=os.getenv("UPLOAD_FOLDER", str(Path(app.instance_path) / "uploads")),
         VAPID_PUBLIC_KEY=os.getenv("VAPID_PUBLIC_KEY", ""),
     )
     if test_config:
