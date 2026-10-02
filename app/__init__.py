@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from flask import Flask, redirect, url_for, flash, request
+from flask_login import current_user, logout_user
 from dotenv import load_dotenv
 from .extensions import db, login_manager
 from .models import User
