@@ -85,6 +85,11 @@ class Listing(db.Model):
     photos = db.relationship("ListingPhoto", backref="listing", cascade="all, delete-orphan")
     top_pinned = db.Column(db.Boolean, default=False, nullable=False)
 
+    @property
+    def seller_status(self):
+        """Current seller status used for marketplace card styling."""
+        return self.seller.status if self.seller else "black"
+
 class ListingPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     listing_id = db.Column(db.Integer, db.ForeignKey("listing.id"), nullable=False)

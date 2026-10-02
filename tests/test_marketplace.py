@@ -33,3 +33,43 @@ def test_registration(client):
     assert r.status_code == 200
     with client.application.app_context():
         assert User.query.filter_by(username="bob").first().listing_credits == 10
+
+
+def test_listing_card_uses_current_seller_status(client, app):
+    from datetime import datetime, timedelta
+    with app.app_context():
+        user = make_user(username="statusseller", email="status@example.com")
+        game = Game.query.first()
+        listing = Listing(
+            seller_id=user.id, game_id=game.id, title="Status Account",
+            description="test", price=10000
+        )
+        db.session.add(listing); db.session.commit()
+
+        r = client.get("/")
+        assert b"listing-card status-black" in r.data
+
+        user.admin_verified = True
+        db.session.commit()
+        r = client.get("/")
+        assert b"listing-card status-purple" in r.data
+
+        user.premium_until = datetime.utcnow() + timedelta(days=30)
+        db.session.commit()
+        r = client.get("/")
+        assert b"listing-card status-green" in r.data
+
+
+def test_admin_can_login_through_normal_login_form(app, client, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "mrmarveloa@gmail.com")
+    monkeypatch.setenv("ADMIN_PASSWORD", "StrongAdminPass123!")
+    with app.app_context():
+        from app.seed import ensure_admin
+        ensure_admin()
+
+    r = client.post("/login", data={
+        "email": "mrmarveloa@gmail.com",
+        "password": "StrongAdminPass123!"
+    })
+    assert r.status_code == 302
+    assert "/admin" in r.headers["Location"]

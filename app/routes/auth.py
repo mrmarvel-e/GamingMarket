@@ -40,21 +40,40 @@ def register():
 @auth_bp.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
-        user = User.query.filter_by(email=request.form["email"].strip().lower()).first()
-        if user and user.check_password(request.form["password"]):
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = User.query.filter_by(email=email).first()
+
+        if user and user.check_password(password):
             # The configured GamingMarket admin uses the normal login form.
-            # Recognize the admin by email and send them directly to the Admin Panel.
+            # Keep the server-side admin flag authoritative and route the
+            # configured admin directly to the Admin Panel.
             import os
             admin_email = os.getenv("ADMIN_EMAIL", "mrmarveloa@gmail.com").strip().lower()
-            if user.email.lower() == admin_email:
-                user.is_admin = True
-                user.admin_verified = True
-                db.session.commit()
+            if user.email.strip().lower() == admin_email:
+                changed = False
+                if not user.is_admin:
+                    user.is_admin = True
+                    changed = True
+                if not user.admin_verified:
+                    user.admin_verified = True
+                    changed = True
+                if changed:
+                    db.session.commit()
+
             login_user(user, remember=True)
             if user.is_admin:
                 return redirect(url_for("admin.dashboard"))
             return redirect(request.args.get("next") or url_for("market.home"))
-        flash("Invalid email or password.", "error")
+
+        # If the configured admin exists but its password was never repaired,
+        # explain the deployment fix without exposing any credentials.
+        import os
+        admin_email = os.getenv("ADMIN_EMAIL", "mrmarveloa@gmail.com").strip().lower()
+        if email == admin_email and user:
+            flash("Admin account found, but the password is not correct. Set ADMIN_PASSWORD in FadeHost and redeploy to repair the admin password.", "error")
+        else:
+            flash("Invalid email or password.", "error")
     return render_template("auth/login.html")
 
 @auth_bp.post("/logout")

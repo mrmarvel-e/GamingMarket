@@ -22,10 +22,24 @@ def seed_games():
     db.session.commit()
 
 def ensure_admin():
+    """Ensure the configured admin identity exists and has admin privileges.
+
+    The admin always uses the normal /login form.  ADMIN_PASSWORD is optional
+    for existing installations, but when it is supplied it becomes the
+    authoritative password for the configured admin account.  This lets a
+    deployment repair an existing admin account without deleting the SQLite
+    database.
+    """
     email = os.getenv("ADMIN_EMAIL", "mrmarveloa@gmail.com").strip().lower()
-    password = os.getenv("ADMIN_PASSWORD", "change-this-before-use")
+    password = os.getenv("ADMIN_PASSWORD", "").strip()
+
     admin = User.query.filter_by(email=email).first()
+
     if not admin:
+        if not password:
+            # Do not create an account with a known/default password.
+            # The next deployment with ADMIN_PASSWORD set will provision it.
+            return
         admin = User(
             username="Admin",
             email=email,
@@ -38,8 +52,11 @@ def ensure_admin():
         admin.set_password(password)
         db.session.add(admin)
     else:
+        # Repair/admin-enable an existing account without touching listings,
+        # deals, payments, or other user data.
         admin.is_admin = True
         admin.admin_verified = True
-        if password and password != "change-this-before-use":
+        if password:
             admin.set_password(password)
+
     db.session.commit()
