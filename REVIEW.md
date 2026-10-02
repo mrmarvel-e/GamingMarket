@@ -36,3 +36,9 @@ Manual review checklist completed:
 - Admin routes are protected.
 - Premium uses the specified Zenith Bank account and ₦10,000/month flow.
 - Browser push is optional/configurable through VAPID environment variables.
+
+
+### Free Fire field update
+- Replaced the Free Fire Diamonds field with Account's Prime.
+- Replaced the Free Fire Rare Skins field with Evo Guns.
+- Existing SQLite game field values are migrated automatically on startup.
