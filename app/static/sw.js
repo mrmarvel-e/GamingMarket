@@ -3,7 +3,7 @@ self.addEventListener("push", event => {
   event.waitUntil(self.registration.showNotification(data.title || "GamingMarket", {
     body: data.body || "You have a new GamingMarket notification.",
     icon: "/static/icons/favicon.svg",
-    data: {url: data.url || "/"}
+    data: {url: "/seller/notifications"}
   }));
 });
 self.addEventListener("notificationclick", event => {

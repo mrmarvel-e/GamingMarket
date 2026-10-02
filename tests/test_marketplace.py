@@ -96,24 +96,12 @@ def test_all_game_specific_fields_are_optional_in_listing_form(client, app):
         assert b"optional" in r.data.lower()
 
 
-def test_seller_can_delete_listing(client, app):
-    with app.app_context():
-        user = make_user(username="deleter", email="delete@example.com")
-        game = Game.query.first()
-        listing = Listing(seller_id=user.id, game_id=game.id, title="Delete Me", description="", price=5000)
-        db.session.add(listing); db.session.commit()
-        listing_id = listing.id
-
-    with client.session_transaction() as sess:
-        sess["_user_id"] = str(user.id)
-        sess["_fresh"] = True
-
-    r = client.post(f"/seller/listing/{listing_id}/delete", follow_redirects=True)
+def test_profile_allows_editing_email_and_phone(client, user):
+    client.post("/login", data={"email": user.email, "password": "password123"}, follow_redirects=True)
+    r = client.post("/seller/profile", data={"email": "updated@example.com", "phone": "+2348000000000", "bank_name": "Test Bank", "bank_account_name": "Test User", "bank_account_number": "123"}, follow_redirects=True)
     assert r.status_code == 200
-    with app.app_context():
-        listing = db.session.get(Listing, listing_id)
-        assert listing.status == "removed"
-        assert listing.top_pinned is False
 
-    public = client.get(f"/listing/{listing_id}")
-    assert public.status_code == 404
+def test_notification_page_exists(client, user):
+    client.post("/login", data={"email": user.email, "password": "password123"}, follow_redirects=True)
+    r = client.get("/seller/notifications")
+    assert r.status_code == 200

@@ -18,7 +18,7 @@
       <a href="{{ url_for('seller.dashboard') }}">Dashboard</a>
       <a href="{{ url_for('seller.new_listing') }}">Sell</a>
       <a href="{{ url_for('seller.profile') }}">Profile</a>
-      <a class="notif" href="{{ url_for('seller.dashboard') }}">Notifications{% if unread_notifications %}<b>{{ unread_notifications }}</b>{% endif %}</a>
+      <a class="notif" href="{{ url_for('seller.notifications') }}">Notifications{% if unread_notifications %}<span class="notif-badge" aria-label="{{ unread_notifications }} unread notifications">{{ unread_notifications }}</span>{% endif %}</a>
       {% if current_user.is_admin %}<a class="btn small" href="{{ url_for('admin.dashboard') }}">Admin Panel</a>{% endif %}
       <form class="inline" method="post" action="{{ url_for('auth.logout') }}"><button class="link-btn">Logout</button></form>
     {% else %}

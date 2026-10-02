@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from ..extensions import db
-from ..models import Game, Listing, ListingPhoto, Deal, Message, PremiumPayment, User, Notification, Review
+from ..models import Game, Listing, ListingPhoto, Deal, Message, PremiumPayment, User, Notification, Review, DealCredentialVault
 from ..services import notify
 
 seller_bp = Blueprint("seller", __name__)
@@ -20,6 +20,15 @@ def dashboard():
     listings = Listing.query.filter_by(seller_id=current_user.id).order_by(Listing.created_at.desc()).all()
     deals = Deal.query.filter((Deal.seller_id==current_user.id)|(Deal.buyer_id==current_user.id)).order_by(Deal.updated_at.desc()).limit(20).all()
     return render_template("seller/dashboard.html", listings=listings, deals=deals)
+
+@seller_bp.get("/notifications")
+@login_required
+def notifications():
+    rows = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(100).all()
+    for row in rows:
+        row.is_read = True
+    db.session.commit()
+    return render_template("seller/notifications.html", notifications=rows)
 
 @seller_bp.route("/listing/new", methods=["GET","POST"])
 @login_required
@@ -78,21 +87,6 @@ def new_listing():
         flash("Listing created.", "success")
         return redirect(url_for("market.listing_detail", listing_id=listing.id))
     return render_template("seller/new_listing.html", games=games)
-
-@seller_bp.post("/listing/<int:listing_id>/delete")
-@login_required
-def delete_listing(listing_id):
-    listing = db.session.get(Listing, listing_id) or abort(404)
-    if listing.seller_id != current_user.id and not current_user.is_admin:
-        abort(403)
-    # Keep the listing record and deal/chat history for audit/dispute purposes,
-    # but remove it from the public marketplace.
-    listing.status = "removed"
-    listing.top_pinned = False
-    db.session.commit()
-    flash("Listing deleted from the marketplace.", "success")
-    return redirect(url_for("seller.dashboard"))
-
 
 @seller_bp.get("/media/<int:listing_id>/<filename>")
 def media(listing_id, filename):
@@ -160,6 +154,39 @@ def deal_status(deal_id):
     db.session.commit()
     return redirect(url_for("seller.deal", deal_id=d.id))
 
+@seller_bp.post("/deal/<int:deal_id>/credential-vault")
+@login_required
+def save_credential_vault(deal_id):
+    d = db.session.get(Deal, deal_id) or abort(404)
+    if current_user.id not in (d.buyer_id, d.seller_id):
+        abort(403)
+    ciphertext = request.form.get("ciphertext", "").strip()
+    iv = request.form.get("iv", "").strip()
+    salt = request.form.get("salt", "").strip()
+    if not ciphertext or not iv or not salt:
+        abort(400)
+    vault = DealCredentialVault.query.filter_by(deal_id=d.id).first()
+    if not vault:
+        vault = DealCredentialVault(deal_id=d.id, ciphertext=ciphertext, iv=iv, salt=salt)
+        db.session.add(vault)
+    else:
+        vault.ciphertext, vault.iv, vault.salt = ciphertext, iv, salt
+    db.session.commit()
+    flash("Encrypted account-access container saved. GamingMarket cannot read its contents.", "success")
+    return redirect(url_for("seller.deal", deal_id=d.id))
+
+@seller_bp.post("/deal/<int:deal_id>/credential-vault/delete")
+@login_required
+def delete_credential_vault(deal_id):
+    d = db.session.get(Deal, deal_id) or abort(404)
+    if current_user.id not in (d.buyer_id, d.seller_id):
+        abort(403)
+    vault = DealCredentialVault.query.filter_by(deal_id=d.id).first()
+    if vault:
+        db.session.delete(vault)
+        db.session.commit()
+    return redirect(url_for("seller.deal", deal_id=d.id))
+
 @seller_bp.route("/premium", methods=["GET","POST"])
 @login_required
 def premium():
@@ -186,6 +213,14 @@ def premium():
 @login_required
 def profile():
     if request.method == "POST":
+        new_email = request.form.get("email", current_user.email).strip().lower()
+        new_phone = request.form.get("phone", current_user.phone).strip()
+        existing = User.query.filter(User.email == new_email, User.id != current_user.id).first()
+        if existing:
+            flash("That email is already in use by another account.", "error")
+            return render_template("seller/profile.html")
+        current_user.email = new_email
+        current_user.phone = new_phone
         current_user.bank_name = request.form.get("bank_name","").strip()
         current_user.bank_account_name = request.form.get("bank_account_name","").strip()
         current_user.bank_account_number = request.form.get("bank_account_number","").strip()

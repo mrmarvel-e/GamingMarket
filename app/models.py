@@ -121,6 +121,16 @@ class Message(db.Model):
     recipient = db.relationship("User", foreign_keys=[recipient_id])
     deal = db.relationship("Deal")
 
+class DealCredentialVault(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    deal_id = db.Column(db.Integer, db.ForeignKey("deal.id"), nullable=False, unique=True)
+    ciphertext = db.Column(db.Text, nullable=False)
+    iv = db.Column(db.String(64), nullable=False)
+    salt = db.Column(db.String(64), nullable=False)
+    created_at = db.Column(db.DateTime, default=now)
+    updated_at = db.Column(db.DateTime, default=now, onupdate=now)
+    deal = db.relationship("Deal", backref=db.backref("credential_vault", uselist=False))
+
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
