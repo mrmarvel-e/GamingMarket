@@ -43,8 +43,26 @@ def new_listing():
             flash("Enter a valid NGN price.", "error")
             return render_template("seller/new_listing.html", games=games)
         attributes = {f: request.form.get(f,"").strip() for f in (game.fields or {}).keys()}
+        if game.slug == "free-fire":
+            # Free Fire Prime and Evo Guns are numeric account stats.
+            for field, label in (("account_prime", "Account's Prime"), ("evo_guns", "Evo Guns")):
+                raw = attributes.get(field, "")
+                if raw:
+                    try:
+                        value = int(raw)
+                    except ValueError:
+                        flash(f"{label} must be a number.", "error")
+                        return render_template("seller/new_listing.html", games=games)
+                    if value < 0:
+                        flash(f"{label} cannot be negative.", "error")
+                        return render_template("seller/new_listing.html", games=games)
+                    attributes[field] = str(value)
+        title = request.form.get("title", "").strip()
+        if not title:
+            flash("Enter a listing title.", "error")
+            return render_template("seller/new_listing.html", games=games)
         listing = Listing(seller_id=current_user.id, game_id=game.id,
-                          title=request.form["title"].strip(), description=request.form["description"].strip(),
+                          title=title, description="",
                           price=price, attributes=attributes)
         db.session.add(listing)
         db.session.flush()

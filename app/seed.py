@@ -3,7 +3,7 @@ from .extensions import db
 from .models import Game, User, Listing
 
 GAMES = [
-    ("Free Fire", "free-fire", ["account_level","rank","characters","evo_guns","gun_skins","emotes","account_prime","region","platform"]),
+    ("Free Fire", "free-fire", ["account_level","rank","evo_guns","gun_skins","emotes","account_prime","region","platform"]),
     ("Call of Duty", "call-of-duty", ["level","rank","weapons","operator_skins","blueprints","cp","region","platform"]),
     ("Lords Mobile", "lords-mobile", ["might","castle_level","heroes","troops","research","gems","region"]),
     ("eFootball", "efootball", ["team","team_strength","epic_players","legendary_players","coins","gp","division","region"]),
@@ -50,6 +50,10 @@ def seed_games():
                     if "account_prime" not in attrs:
                         attrs["account_prime"] = attrs["diamonds"]
                     attrs.pop("diamonds", None)
+                    changed = True
+                # Characters is no longer a Free Fire listing field.
+                if "characters" in attrs:
+                    attrs.pop("characters", None)
                     changed = True
                 if changed:
                     listing.attributes = attrs

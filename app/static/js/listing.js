@@ -7,8 +7,9 @@ function render(){
   if(!g)return;
   Object.keys(g.fields||{}).forEach(k=>{
     const label=document.createElement("label");
-    label.textContent=k.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
-    const input=document.createElement("input"); input.name=k; input.placeholder=label.textContent;
+    const fieldName=k.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
+    label.textContent=fieldName+" (optional)";
+    const input=document.createElement("input"); input.name=k; input.placeholder=fieldName; input.required=false;
     label.appendChild(input); box.appendChild(label);
   });
 }

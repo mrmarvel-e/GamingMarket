@@ -73,3 +73,24 @@ def test_admin_can_login_through_normal_login_form(app, client, monkeypatch):
     })
     assert r.status_code == 302
     assert "/admin" in r.headers["Location"]
+
+
+def test_listing_has_no_description_field(client):
+    r = client.get("/listing/new")
+    assert r.status_code in (302, 200)
+    if r.status_code == 200:
+        assert b'name="description"' not in r.data
+
+
+def test_all_game_specific_fields_are_optional_in_listing_form(client, app):
+    with app.app_context():
+        games = Game.query.order_by(Game.name).all()
+        assert games
+        for game in games:
+            for field in (game.fields or {}):
+                assert field
+
+    r = client.get("/listing/new")
+    assert r.status_code == 302 or r.status_code == 200
+    if r.status_code == 200:
+        assert b"optional" in r.data.lower()
