@@ -29,6 +29,9 @@ def home():
 @market_bp.get("/listing/<int:listing_id>")
 def listing_detail(listing_id):
     listing = db.session.get(Listing, listing_id) or abort(404)
+    if listing.status != "active":
+        if not current_user.is_authenticated or (current_user.id != listing.seller_id and not current_user.is_admin):
+            abort(404)
     reviews = Review.query.filter_by(seller_id=listing.seller_id).order_by(Review.created_at.desc()).limit(10).all()
     return render_template("market/listing.html", listing=listing, reviews=reviews)
 

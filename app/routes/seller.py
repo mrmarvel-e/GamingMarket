@@ -79,6 +79,21 @@ def new_listing():
         return redirect(url_for("market.listing_detail", listing_id=listing.id))
     return render_template("seller/new_listing.html", games=games)
 
+@seller_bp.post("/listing/<int:listing_id>/delete")
+@login_required
+def delete_listing(listing_id):
+    listing = db.session.get(Listing, listing_id) or abort(404)
+    if listing.seller_id != current_user.id and not current_user.is_admin:
+        abort(403)
+    # Keep the listing record and deal/chat history for audit/dispute purposes,
+    # but remove it from the public marketplace.
+    listing.status = "removed"
+    listing.top_pinned = False
+    db.session.commit()
+    flash("Listing deleted from the marketplace.", "success")
+    return redirect(url_for("seller.dashboard"))
+
+
 @seller_bp.get("/media/<int:listing_id>/<filename>")
 def media(listing_id, filename):
     return send_from_directory(os.path.join(current_app.config["UPLOAD_FOLDER"], str(listing_id)), filename)
