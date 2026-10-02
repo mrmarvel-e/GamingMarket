@@ -21,6 +21,9 @@ class User(UserMixin, db.Model):
     bank_account_name = db.Column(db.String(160))
     bank_account_number = db.Column(db.String(30))
     created_at = db.Column(db.DateTime, default=now)
+    is_banned = db.Column(db.Boolean, default=False, nullable=False)
+    banned_at = db.Column(db.DateTime)
+    banned_reason = db.Column(db.String(500))
 
     def set_password(self, value):
         self.password_hash = generate_password_hash(value)
@@ -60,6 +63,18 @@ class Referral(db.Model):
     referrer_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     referred_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=now)
+
+
+class BanAppeal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(30), default="pending", nullable=False)
+    admin_response = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=now)
+    reviewed_at = db.Column(db.DateTime)
+    user = db.relationship("User", backref=db.backref("ban_appeals", lazy=True))
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)

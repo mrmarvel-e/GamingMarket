@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user
 from ..extensions import db
-from ..models import User, Referral
+from ..models import User, Referral, BanAppeal
 from ..services import make_referral_code
 
 auth_bp = Blueprint("auth", __name__)
@@ -37,6 +37,31 @@ def register():
         return redirect(url_for("market.home"))
     return render_template("auth/register.html")
 
+@auth_bp.route("/appeal", methods=["GET", "POST"])
+def ban_appeal():
+    if current_user.is_authenticated:
+        return redirect(url_for("market.home"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        message = request.form.get("message", "").strip()
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.is_banned or user.is_admin:
+            flash("We could not find a banned account for that email address.", "error")
+            return render_template("auth/appeal.html", email=email)
+        if not message:
+            flash("Please explain why you believe the ban should be reviewed.", "error")
+            return render_template("auth/appeal.html", email=email)
+        existing = BanAppeal.query.filter_by(user_id=user.id, status="pending").first()
+        if existing:
+            flash("You already have a pending appeal. Please wait for Admin to review it.", "error")
+            return render_template("auth/appeal.html", email=email)
+        appeal = BanAppeal(user_id=user.id, email=email, message=message[:5000])
+        db.session.add(appeal)
+        db.session.commit()
+        flash("Your ban appeal has been submitted to GamingMarket Admin.", "success")
+        return redirect(url_for("auth.login"))
+    return render_template("auth/appeal.html")
+
 @auth_bp.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -45,6 +70,10 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and user.check_password(password):
+            if user.is_banned and not user.is_admin:
+                reason = f" Reason: {user.banned_reason}" if user.banned_reason else ""
+                flash(f"This account has been banned.{reason} You can submit an appeal if you believe this is a mistake.", "error")
+                return render_template("auth/login.html", banned_email=email)
             # The configured GamingMarket admin uses the normal login form.
             # Keep the server-side admin flag authoritative and route the
             # configured admin directly to the Admin Panel.

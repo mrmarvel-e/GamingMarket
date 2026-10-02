@@ -11,7 +11,7 @@ market_bp = Blueprint("market", __name__)
 def home():
     q = request.args.get("q","").strip()
     game = request.args.get("game","")
-    query = Listing.query.filter_by(status="active")
+    query = Listing.query.join(User, Listing.seller_id == User.id).filter(Listing.status=="active", User.is_banned.is_(False))
     if q:
         query = query.filter(or_(Listing.title.ilike(f"%{q}%"), Listing.description.ilike(f"%{q}%")))
     if game:
@@ -29,6 +29,10 @@ def home():
 @market_bp.get("/listing/<int:listing_id>")
 def listing_detail(listing_id):
     listing = db.session.get(Listing, listing_id) or abort(404)
+    if listing.seller and listing.seller.is_banned and not current_user.is_authenticated:
+        abort(404)
+    if listing.seller and listing.seller.is_banned and current_user.id != listing.seller_id and not current_user.is_admin:
+        abort(404)
     reviews = Review.query.filter_by(seller_id=listing.seller_id).order_by(Review.created_at.desc()).limit(10).all()
     return render_template("market/listing.html", listing=listing, reviews=reviews)
 
@@ -54,6 +58,8 @@ def deal_request(listing_id):
 @market_bp.get("/seller/<int:user_id>")
 def seller_profile(user_id):
     seller = db.session.get(User, user_id) or abort(404)
+    if seller.is_banned and not current_user.is_admin:
+        abort(404)
     listings = Listing.query.filter_by(seller_id=user_id, status="active").order_by(Listing.created_at.desc()).all()
     reviews = Review.query.filter_by(seller_id=user_id).order_by(Review.created_at.desc()).all()
     return render_template("market/seller.html", seller=seller, listings=listings, reviews=reviews)

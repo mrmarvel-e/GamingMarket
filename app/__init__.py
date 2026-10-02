@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from flask import Flask
+from flask import Flask, redirect, url_for, flash, request
 from dotenv import load_dotenv
 from .extensions import db, login_manager
 from .models import User
@@ -48,15 +48,38 @@ def create_app(test_config=None):
 
     @app.context_processor
     def inject_globals():
-        from flask_login import current_user
+        from flask_login import current_user, logout_user
         unread = 0
         if current_user.is_authenticated:
             from .models import Notification
             unread = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
         return {"unread_notifications": unread, "vapid_public_key": app.config["VAPID_PUBLIC_KEY"]}
 
+    @app.before_request
+    def block_banned_users():
+        if current_user.is_authenticated and getattr(current_user, "is_banned", False):
+            # Admins cannot be banned, but keep the exception explicit so a
+            # malformed database row cannot lock an administrator out of the panel.
+            if not current_user.is_admin and request.endpoint not in {"auth.logout", "static"}:
+                logout_user()
+                flash("This GamingMarket account has been banned. Contact Admin if you believe this is a mistake.", "error")
+                return redirect(url_for("auth.login"))
+
     with app.app_context():
         db.create_all()
+        # Lightweight SQLite migration for existing deployments. SQLAlchemy's
+        # create_all() does not add new columns to an existing table.
+        from sqlalchemy import inspect, text
+        user_columns = {col["name"] for col in inspect(db.engine).get_columns("user")}
+        migrations = {
+            "is_banned": "BOOLEAN NOT NULL DEFAULT 0",
+            "banned_at": "DATETIME",
+            "banned_reason": "VARCHAR(500)",
+        }
+        for name, definition in migrations.items():
+            if name not in user_columns:
+                db.session.execute(text(f"ALTER TABLE user ADD COLUMN {name} {definition}"))
+        db.session.commit()
         seed_games()
         ensure_admin()
 

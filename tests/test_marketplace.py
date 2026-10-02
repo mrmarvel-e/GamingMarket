@@ -105,3 +105,73 @@ def test_notification_page_exists(client, user):
     client.post("/login", data={"email": user.email, "password": "password123"}, follow_redirects=True)
     r = client.get("/seller/notifications")
     assert r.status_code == 200
+
+
+def test_admin_can_ban_and_unban_user(client, app, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "mrmarveloa@gmail.com")
+    monkeypatch.setenv("ADMIN_PASSWORD", "StrongAdminPass123!")
+    with app.app_context():
+        from app.seed import ensure_admin
+        ensure_admin()
+        target = make_user(username="banneduser", email="banned@example.com")
+    client.post("/login", data={"email":"mrmarveloa@gmail.com", "password":"StrongAdminPass123!"})
+    r = client.post(f"/admin/users/{target.id}/ban", data={"reason":"Marketplace abuse"}, follow_redirects=True)
+    assert r.status_code == 200
+    with app.app_context():
+        target = db.session.get(User, target.id)
+        assert target.is_banned is True
+        assert target.banned_reason == "Marketplace abuse"
+    client.post("/logout")
+    r = client.post("/login", data={"email":"banned@example.com", "password":"password123"}, follow_redirects=True)
+    assert r.status_code == 200
+    assert b"account has been banned" in r.data
+    client.post("/login", data={"email":"mrmarveloa@gmail.com", "password":"StrongAdminPass123!"})
+    r = client.post(f"/admin/users/{target.id}/unban", follow_redirects=True)
+    assert r.status_code == 200
+    with app.app_context():
+        target = db.session.get(User, target.id)
+        assert target.is_banned is False
+        assert target.banned_reason is None
+
+
+def test_banned_user_can_submit_appeal(client, app):
+    with app.app_context():
+        user = make_user(username="banneduser", email="banned@example.com")
+        user.is_banned = True
+        user.banned_reason = "Test ban"
+        db.session.commit()
+        user_id = user.id
+
+    r = client.post("/appeal", data={
+        "email": "banned@example.com",
+        "message": "I believe this ban was a mistake and would like a review."
+    }, follow_redirects=True)
+    assert r.status_code == 200
+    assert b"appeal has been submitted" in r.data
+    with app.app_context():
+        from app.models import BanAppeal
+        appeal = BanAppeal.query.filter_by(user_id=user_id).first()
+        assert appeal is not None
+        assert appeal.status == "pending"
+
+
+def test_admin_can_approve_ban_appeal(app, client, monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAIL", "mrmarveloa@gmail.com")
+    monkeypatch.setenv("ADMIN_PASSWORD", "StrongAdminPass123!")
+    with app.app_context():
+        from app.seed import ensure_admin
+        from app.models import BanAppeal
+        ensure_admin()
+        user = make_user(username="appealuser", email="appeal@example.com")
+        user.is_banned = True
+        db.session.add(BanAppeal(user_id=user.id, email=user.email, message="Please review my ban."))
+        db.session.commit()
+        appeal_id = BanAppeal.query.first().id
+    client.post("/login", data={"email":"mrmarveloa@gmail.com", "password":"StrongAdminPass123!"})
+    r = client.post(f"/admin/appeals/{appeal_id}/approve", follow_redirects=True)
+    assert r.status_code == 200
+    with app.app_context():
+        from app.models import BanAppeal
+        appeal = db.session.get(BanAppeal, appeal_id)
+        assert appeal.status == "approved"
+        assert appeal.user.is_banned is False

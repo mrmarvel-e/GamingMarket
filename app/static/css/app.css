@@ -31,3 +31,8 @@ textarea,input,select{width:100%;background:#09090a;color:#fff;border:1px solid 
 /* Notification count is a separate visual badge, not part of the Notifications label. */
 .site-header .notif{position:relative;display:inline-flex;align-items:center;gap:8px}
 .site-header .notif-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:800;line-height:1;background:#d61f2c;color:#fff}
+
+.btn.danger{background:linear-gradient(135deg,#7f1d1d,#991b1b);border-color:#b91c1c;box-shadow:none}.btn.danger:hover{background:linear-gradient(135deg,#991b1b,#b91c1c);border-color:#ef4444}.admin-user-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.ban-reason{width:190px;padding:9px 10px}.ban-label{color:#ff6b6b;font-weight:800}
+@media(max-width:760px){.admin-user-actions{justify-content:flex-start}.ban-reason{width:100%;min-width:180px}}
+
+.appeal-card{margin:12px 0;padding:14px;border:1px solid #2b2b2b;border-radius:14px;background:#0e0e0e}.appeal-card small{display:block;color:#888;margin-top:4px}.appeal-card p{white-space:pre-wrap;line-height:1.55}.appeal-card .admin-user-actions{margin-top:10px}

@@ -46,3 +46,15 @@ The default database is created at `instance/gamingmarket.db`.
 - For hosted persistence, mount persistent storage and set `SQLITE_DB_PATH` to a file in that mounted directory.
 - Never commit `.env`, `instance/gamingmarket.db`, or uploaded files.
 - Start command: `python run.py`
+
+## Account Bans
+
+Administrators can ban or unban non-admin accounts from **Admin Panel → Users**. A banned account:
+
+- cannot log in
+- is logged out if already signed in and attempts another protected request
+- cannot use seller/deal features
+- has its marketplace listings hidden while the ban is active
+- keeps its listings, deals, chats, and history intact for review
+
+Admins can optionally record a ban reason. Admin accounts cannot be banned from the Users page.
