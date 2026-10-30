@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user, login_required
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from ..extensions import db
 from ..models import Game, Listing, ListingPhoto, Deal, Message, Review, User
 from ..services import notify
@@ -24,7 +24,17 @@ def home():
                 1 if s=="green" else 2 if s=="gold" else 3 if s=="purple" else 4,
                 -x.created_at.timestamp())
     listings.sort(key=key)
-    return render_template("market/home.html", listings=listings, games=Game.query.order_by(Game.name).all(), q=q, game=game)
+    return render_template(
+        "market/home.html",
+        listings=listings,
+        games=Game.query.order_by(Game.name).all(),
+        q=q,
+        game=game,
+        share_url=url_for("market.home", _external=True),
+        share_title="GamingMarket",
+        share_text="Discover GamingMarket! 🎮 Browse gaming accounts, compare listings and find your next gaming account.",
+        share_label="Share GamingMarket",
+    )
 
 @market_bp.get("/listing/<int:listing_id>")
 def listing_detail(listing_id):
@@ -55,11 +65,45 @@ def deal_request(listing_id):
     flash("Deal request sent. Continue in chat.", "success")
     return redirect(url_for("seller.deal", deal_id=deal.id))
 
+def _render_seller_profile(seller):
+    if seller.is_banned and not (current_user.is_authenticated and current_user.is_admin):
+        abort(404)
+    listings = Listing.query.filter_by(
+        seller_id=seller.id, status="active"
+    ).order_by(Listing.created_at.desc()).all()
+    reviews = Review.query.filter_by(
+        seller_id=seller.id
+    ).order_by(Review.created_at.desc()).all()
+    public_url = url_for(
+        "market.public_seller_profile",
+        username=seller.username,
+        _external=True,
+    )
+    return render_template(
+        "market/seller.html",
+        seller=seller,
+        listings=listings,
+        reviews=reviews,
+        share_url=public_url,
+        share_title=f"{seller.username} on GamingMarket",
+        share_text=(
+            f"Check out {seller.username}'s GamingMarket profile! 🎮 "
+            "Browse their available gaming account listings."
+        ),
+        share_label="Share Profile",
+    )
+
+
 @market_bp.get("/seller/<int:user_id>")
 def seller_profile(user_id):
     seller = db.session.get(User, user_id) or abort(404)
-    if seller.is_banned and not current_user.is_admin:
+    return _render_seller_profile(seller)
+
+
+@market_bp.get("/u/<username>")
+def public_seller_profile(username):
+    # A readable, stable URL that sellers can share outside GamingMarket.
+    seller = User.query.filter(func.lower(User.username) == username.lower()).first()
+    if not seller:
         abort(404)
-    listings = Listing.query.filter_by(seller_id=user_id, status="active").order_by(Listing.created_at.desc()).all()
-    reviews = Review.query.filter_by(seller_id=user_id).order_by(Review.created_at.desc()).all()
-    return render_template("market/seller.html", seller=seller, listings=listings, reviews=reviews)
+    return _render_seller_profile(seller)

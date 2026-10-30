@@ -175,3 +175,35 @@ def test_admin_can_approve_ban_appeal(app, client, monkeypatch):
         appeal = db.session.get(BanAppeal, appeal_id)
         assert appeal.status == "approved"
         assert appeal.user.is_banned is False
+
+
+def test_homepage_has_share_actions(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Share GamingMarket" in response.data
+    assert b"wa.me" in response.data
+    assert b"t.me/share/url" in response.data
+    assert b"facebook.com/sharer" in response.data
+
+
+def test_public_username_profile_can_be_shared(client, app):
+    with app.app_context():
+        seller = make_user(username="shareable", email="shareable@example.com")
+        game = Game.query.first()
+        listing = Listing(
+            seller_id=seller.id,
+            game_id=game.id,
+            title="Public Game Account",
+            description="Public listing",
+            price=15000,
+        )
+        db.session.add(listing)
+        db.session.commit()
+
+    response = client.get("/u/shareable")
+    assert response.status_code == 200
+    assert b"Share Profile" in response.data
+    assert b"/u/shareable" in response.data
+    assert b"Public Game Account" in response.data
+    # Private contact/payment data must not be exposed on the public profile.
+    assert b"1234567890" not in response.data

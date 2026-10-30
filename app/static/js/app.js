@@ -20,4 +20,51 @@
     return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
   }
   init();
+
+  // Sharing uses the browser's native share sheet when available.
+  document.addEventListener("click", async function(event){
+    const shareButton = event.target.closest("[data-share-button]");
+    if(shareButton){
+      const title = shareButton.dataset.shareTitle || "GamingMarket";
+      const text = shareButton.dataset.shareText || "Discover GamingMarket!";
+      const url = shareButton.dataset.shareUrl || window.location.href;
+      if(navigator.share){
+        try{
+          await navigator.share({title, text, url});
+          return;
+        }catch(error){
+          if(error && error.name === "AbortError") return;
+        }
+      }
+      const message = `${text} ${url}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const copyButton = event.target.closest("[data-copy-share-url]");
+    if(copyButton){
+      const url = copyButton.dataset.copyShareUrl || window.location.href;
+      const originalText = copyButton.textContent;
+      try{
+        if(navigator.clipboard && window.isSecureContext){
+          await navigator.clipboard.writeText(url);
+        }else{
+          const field = document.createElement("textarea");
+          field.value = url;
+          field.setAttribute("readonly", "");
+          field.style.position = "absolute";
+          field.style.left = "-9999px";
+          document.body.appendChild(field);
+          field.select();
+          const copied = document.execCommand("copy");
+          field.remove();
+          if(!copied) throw new Error("Clipboard unavailable");
+        }
+        copyButton.textContent = "Copied!";
+      }catch(error){
+        window.prompt("Copy this GamingMarket link:", url);
+      }
+      window.setTimeout(() => { copyButton.textContent = originalText; }, 1800);
+    }
+  });
 })();

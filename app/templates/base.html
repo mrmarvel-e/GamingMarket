@@ -4,7 +4,16 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}GamingMarket{% endblock %}</title>
 <meta name="theme-color" content="#090909"><meta name="application-name" content="GamingMarket">
-<meta name="description" content="GamingMarket — buy and sell gaming accounts in Nigeria.">
+<meta name="description" content="{% block meta_description %}GamingMarket — buy and sell gaming accounts in Nigeria.{% endblock %}">
+<meta property="og:site_name" content="GamingMarket">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{% block og_title %}GamingMarket — Gaming Account Marketplace{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Buy and sell gaming accounts in Nigeria on GamingMarket.{% endblock %}">
+<meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{% block twitter_title %}GamingMarket{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}Buy and sell gaming accounts in Nigeria.{% endblock %}">
+<link rel="canonical" href="{% block canonical_url %}{{ request.url }}{% endblock %}">
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png', v='2') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>

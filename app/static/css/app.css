@@ -36,3 +36,12 @@ textarea,input,select{width:100%;background:#09090a;color:#fff;border:1px solid 
 @media(max-width:760px){.admin-user-actions{justify-content:flex-start}.ban-reason{width:100%;min-width:180px}}
 
 .appeal-card{margin:12px 0;padding:14px;border:1px solid #2b2b2b;border-radius:14px;background:#0e0e0e}.appeal-card small{display:block;color:#888;margin-top:4px}.appeal-card p{white-space:pre-wrap;line-height:1.55}.appeal-card .admin-user-actions{margin-top:10px}
+
+
+/* Public page sharing */
+.share-panel{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin:18px 0 26px;padding:16px 18px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(110deg,rgba(239,35,60,.08),rgba(255,255,255,.018))}
+.share-panel-copy{display:flex;flex-direction:column;gap:4px}
+.share-panel-copy strong{font-size:14px}
+.share-panel-copy .muted{font-size:12px}
+.share-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media(max-width:760px){.share-panel{align-items:flex-start}.share-actions{width:100%}.share-actions .btn{flex:1 1 auto}}

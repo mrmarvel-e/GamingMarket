@@ -1,8 +1,16 @@
-{% extends "base.html" %}{% block title %}GamingMarket — Gaming Accounts{% endblock %}{% block content %}
+{% extends "base.html" %}
+{% block title %}GamingMarket — Gaming Accounts{% endblock %}
+{% block meta_description %}Discover gaming accounts for sale in Nigeria. Browse GamingMarket listings, compare prices and connect with sellers.{% endblock %}
+{% block og_title %}GamingMarket — Buy and Sell Gaming Accounts{% endblock %}
+{% block og_description %}Discover gaming accounts for sale in Nigeria. Browse listings and connect with sellers on GamingMarket.{% endblock %}
+{% block twitter_title %}GamingMarket — Gaming Accounts{% endblock %}
+{% block twitter_description %}Browse gaming accounts and discover listings on GamingMarket.{% endblock %}
+{% block content %}
 <section class="store-top">
   <div><p class="eyebrow">NIGERIA · GAMING ACCOUNT MARKETPLACE</p><h1>Buy. Sell. Game on.</h1><p class="muted">Browse gaming accounts from marketplace sellers, compare prices and send a deal request when you’re ready.</p></div>
   {% if current_user.is_authenticated %}<a class="btn" href="{{ url_for('seller.new_listing') }}">+ Sell an Account</a>{% else %}<a class="btn" href="{{ url_for('auth.register') }}">Start Selling</a>{% endif %}
 </section>
+{% include "market/_share_actions.html" %}
 <div class="status-legend"><span class="status-key"><i></i>Normal</span><span class="status-key purple"><i></i>Admin Verified</span><span class="status-key gold"><i></i>Premium</span><span class="status-key green"><i></i>Verified + Premium</span></div>
 <div class="game-strip">{% for g in games %}<a class="{% if game==g.slug %}active{% endif %}" href="{{ url_for('market.home', game=g.slug) }}">{{ g.name }}</a>{% endfor %}</div>
 <section class="section-head"><div><h2>{% if game %}{{ game|replace('-',' ')|title }}{% else %}Featured Marketplace{% endif %}</h2><p class="muted">{{ listings|length }} active accounts available</p></div><a class="btn ghost small" href="{{ url_for('market.home') }}">View all</a></section>

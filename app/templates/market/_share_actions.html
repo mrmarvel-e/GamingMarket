@@ -1,0 +1,20 @@
+<div class="share-panel" aria-label="Share this page">
+  <div class="share-panel-copy">
+    <strong>{{ share_label }}</strong>
+    <span class="muted">Send this link with a ready-to-use message.</span>
+  </div>
+  <div class="share-actions">
+    <button class="btn small" type="button"
+      data-share-button
+      data-share-title="{{ share_title }}"
+      data-share-text="{{ share_text }}"
+      data-share-url="{{ share_url }}">Share</button>
+    <a class="btn ghost small" target="_blank" rel="noopener noreferrer"
+      href="https://wa.me/?text={{ (share_text ~ ' ' ~ share_url)|urlencode }}">WhatsApp</a>
+    <a class="btn ghost small" target="_blank" rel="noopener noreferrer"
+      href="https://t.me/share/url?url={{ share_url|urlencode }}&text={{ share_text|urlencode }}">Telegram</a>
+    <a class="btn ghost small" target="_blank" rel="noopener noreferrer"
+      href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}">Facebook</a>
+    <button class="btn ghost small" type="button" data-copy-share-url="{{ share_url }}">Copy link</button>
+  </div>
+</div>
